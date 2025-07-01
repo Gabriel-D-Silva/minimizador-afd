@@ -1,18 +1,58 @@
 def criarAFD(conteudo):
     from automata.fa.dfa import DFA
 
-    estados = conteudo[1].strip('estados:')
+    alfabeto = conteudo[0][9:].split(',')
+    print('alfabeto: ',alfabeto)
+    estados = conteudo[1].strip("estados:").split(',')
+    print('estados: ',estados)
+    inicial = conteudo[2].strip("inicial:").split(',')
+    print('inicial: ',inicial)
+    finais = conteudo[3].strip("finais:").split(',')
+    print('finais: ',finais)
+
+    # Cria lista com a base para todas as transicoes
+    transicoes = []
+    for estado in estados:
+        transicoes.append({estado : {}})
+    #print(transicoes)
+
+    # Deixa somente as transições na lista 'conteudo'
+    for i in range(0,5):
+        conteudo.pop(0)
+
+    # Iterando por cada transicao do documento   
+    for i in conteudo:
+
+        # Transofrmando a transicao numa lista e definindo seus valores
+        transicao = i.split(',')
+
+        estado = transicao[0]
+        destino = transicao[1]
+        valor = transicao[2]
+
+        # Procura o dicionario correspondente a transicao atual e faz a inserção da transição nela
+        for j in transicoes:
+            if estado in j:
+                j[estado][valor] = destino
+                break
+
+    # Convertendo a lista 'transicoes' pra um dicionario só
+    transicoes_dict = {}
+    for item in transicoes:
+        transicoes_dict.update(item)
+    
+    print('transicoes: ',transicoes_dict)
+
     # Definindo a AFD
-    dfa = DFA(
-        states={'q0', 'q1'},
-        input_symbols={'0', '1'},
-        transitions={
-            'q0': {'0': 'q1', '1': 'q0'},
-            'q1': {'0': 'q0', '1': 'q1'}
-        },
-        initial_state='q0',
-        final_states={'q1'}
+    afd = DFA(
+        states={*estados},
+        input_symbols={*alfabeto},
+        transitions=transicoes_dict,
+        initial_state=inicial[0],
+        final_states={*finais}
     )
+
+    return afd
 
 def selecionarArquivo():
     from tkinter import filedialog

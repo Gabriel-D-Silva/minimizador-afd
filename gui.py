@@ -20,8 +20,8 @@ def iniciarApp():
     tutorialLabel.pack(padx=10)
 
     try:
-        imgExemplo = Image.open("exemplo.png")  # Caminho do arquivo
-        imgExemploRedimensionada = imgExemplo.resize((600, 400))  # Opcional
+        imgExemplo = Image.open("exemplo.png")
+        imgExemploRedimensionada = imgExemplo.resize((600, 400))
         imagemTk = ImageTk.PhotoImage(imgExemploRedimensionada)
 
         labelImagem = tk.Label(frameTutorial, image=imagemTk)
