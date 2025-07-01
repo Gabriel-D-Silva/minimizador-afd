@@ -55,14 +55,22 @@ def criarAFD(conteudo):
     return afd
 
 def selecionarArquivo():
+    filetypes = (("Arquivos de texto", "*.txt"))
     from tkinter import filedialog
-
-    path = filedialog.askopenfile()
+    from tkinter import messagebox
+    path = filedialog.askopenfile(title="Abrir arquivo txt", filetypes=[("texto", "*.txt")])
     with open(path.name) as arquivo:
         conteudo = arquivo.readlines()
     conteudo = [x.strip('\n') for x in conteudo]
+    try:
+        criarAFD(conteudo)
+    except:
+        messagebox.showerror(title="Erro de leitura", message="Verifique se o formato do documento está correto e se segue o padrão estabelecido no exemplo(Se atente para virgulas e espaços). Após isso tente novamente!  ")
+    
 
-    criarAFD(conteudo)
+
+    
+    
 
 def criarExemplo():
 
