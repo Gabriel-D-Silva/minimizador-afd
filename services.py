@@ -54,29 +54,86 @@ def criarAFD(conteudo):
 
     return afd
 
+def verificarFormatacao(path):
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            linhas = [linha.strip() for linha in f if linha.strip()]
+
+        # Checa se tem pelo menos as 5 primeiras linhas essenciais
+        if len(linhas) < 6:
+            return False
+
+        # Checa se as primeiras 5 linhas começam com os cabeçalhos esperados
+        if not linhas[0].startswith("alfabeto:"):
+            return False
+        if not linhas[1].startswith("estados:"):
+            return False
+        if not linhas[2].startswith("inicial:"):
+            return False
+        if not linhas[3].startswith("finais:"):
+            return False
+        if linhas[4].strip().lower() != "transicoes":
+            return False
+
+        # Divide e remove espaços de cada item
+        alfabeto = set(s.strip() for s in linhas[0].split(":", 1)[1].split(","))
+        estados = set(s.strip() for s in linhas[1].split(":", 1)[1].split(","))
+        estadoInicial = linhas[2].split(":", 1)[1].strip()
+        finais = set(s.strip() for s in linhas[3].split(":", 1)[1].split(","))
+
+        # Checa a validade do estado inicial
+        if estadoInicial not in estados:
+            return False
+
+        # Checa a validade dos estados finais
+        if not finais.issubset(estados):
+            return False
+        
+        # Checa a validade das transições presentes no arquivo
+        for i, linha in enumerate(linhas[5:], start=6):
+            partes = [p.strip() for p in linha.split(",")]
+            if len(partes) != 3:
+                return False
+            origem, destino, simbolo = partes
+            if origem not in estados:
+                return False
+            if destino not in estados:
+                return False
+            if simbolo not in alfabeto:
+                return False
+
+        return True
+
+    except FileNotFoundError:
+        return False
+    except Exception as e:
+        return False
+
 def selecionarArquivo():
     from tkinter import filedialog
     from tkinter import messagebox
-    path = filedialog.askopenfile(title="Abrir arquivo txt", filetypes=[("texto", "*.txt")])
-    with open(path.name) as arquivo:
-        conteudo = arquivo.readlines()
-    conteudo = [x.strip('\n') for x in conteudo]
-    try:
-        criarAFD(conteudo)
-    except:
-        messagebox.showerror(title="Erro de leitura", message="Verifique se o formato do documento está correto e se segue o padrão estabelecido no exemplo(Se atente para virgulas e espaços). Após isso tente novamente!  ")
-    
-
-
-    
-    
+    path = filedialog.askopenfile(title="Abrir arquivo txt", filetypes=[("Arquivo de texto", "*.txt")], initialdir=".")
+    if(verificarFormatacao(path.name)):
+        with open(path.name) as arquivo:
+            conteudo = arquivo.readlines()
+        conteudo = [x.strip('\n') for x in conteudo]
+        try:
+            afd = criarAFD(conteudo)
+            print('AFD criada!')
+        except Exception as e:
+            import traceback
+            print("Erro ao criar AFD: ", e)
+            traceback.print_exc() # Mostra o erro completo no console
+            messagebox.showerror(title="Erro ao criar AFD!", message=f"Diagnostico:\n{str(e)}")
+    else:
+        messagebox.showerror(title="Erro de leitura", message="Verifique se o formato do documento está correto e se segue o padrão estabelecido no exemplo (Se atente para virgulas e espaços e para o fato de só poder haver um estado inicial na AFD). Após isso tente novamente!")
 
 def criarExemplo():
 
     from tkinter import filedialog
     from tkinter import messagebox
 
-    diretorioArquivo = filedialog.askdirectory(title ="Selecione a pasta que quer o exemplo")
+    diretorioArquivo = filedialog.askdirectory(title ="Selecione a pasta que quer o exemplo", initialdir=".")
     exemplo = open(f"{diretorioArquivo}\\exemplo.txt", "w")
-    exemplo.write("alfabeto:a,b,c,d\nestados:q0,q1,q2\ninicial:q0\nfinais:q1,q2\ntransicoes\nq0,q1,a\nq0,q0,b\nq1,q0,a\nq1,q2,b\nq2,q1,a\nq2,q2,b")  
+    exemplo.write("alfabeto:a,b\nestados:q0,q1,q2\ninicial:q0\nfinais:q1,q2\ntransicoes\nq0,q1,a\nq0,q0,b\nq1,q0,a\nq1,q2,b\nq2,q1,a\nq2,q2,b")  
     messagebox.showinfo(title="Exemplo .txt criado com sucesso!", message="O exemplo de .txt contendo uma AFD foi criado na pasta selecionada.")
