@@ -115,6 +115,12 @@ def aplicarMyhillNerode(afd):
     n = len(estados)
     matriz = [[False] * n for _ in range(n)]
 
+    # Passo 1: Desmarcar todos os itens da diagonal principal e acima dela
+    for i in range(len(matriz)):
+        for j in range(len(matriz[i])):
+            if (i <= j):
+                matriz[i][j] = True
+
     mostrarIteraçãoTabela(estados, matriz)
 
     afdMinimizada = afd
