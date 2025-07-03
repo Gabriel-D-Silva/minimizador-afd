@@ -3,18 +3,17 @@ def criarAFD(conteudo):
 
     alfabeto = conteudo[0][9:].split(',')
     print('alfabeto: ',alfabeto)
-    estados = conteudo[1].strip("estados:").split(',')
+    estados = conteudo[1][8:].split(',')
     print('estados: ',estados)
-    inicial = conteudo[2].strip("inicial:").split(',')
+    inicial = conteudo[2][8:].split(',')
     print('inicial: ',inicial)
-    finais = conteudo[3].strip("finais:").split(',')
+    finais = conteudo[3][7:].split(',')
     print('finais: ',finais)
 
     # Cria lista com a base para todas as transicoes
     transicoes = []
     for estado in estados:
         transicoes.append({estado : {}})
-    #print(transicoes)
 
     # Deixa somente as transições na lista 'conteudo'
     for i in range(0,5):
@@ -109,6 +108,18 @@ def verificarFormatacao(path):
     except Exception as e:
         return False
 
+def aplicarMyhillNerode(afd):
+    from gui import mostrarIteraçãoTabela
+
+    estados = (sorted(list(afd.states)))
+    n = len(estados)
+    matriz = [[False] * n for _ in range(n)]
+
+    mostrarIteraçãoTabela(estados, matriz)
+
+    afdMinimizada = afd
+    return afdMinimizada
+
 def selecionarArquivo():
     from tkinter import filedialog
     from tkinter import messagebox
@@ -119,7 +130,9 @@ def selecionarArquivo():
         conteudo = [x.strip('\n') for x in conteudo]
         try:
             afd = criarAFD(conteudo)
-            print('AFD criada!')
+            print('AFD criada')
+            afdMinimizada = aplicarMyhillNerode(afd)
+            # Abrir uma tela com o afd miniminzado
         except Exception as e:
             import traceback
             print("Erro ao criar AFD: ", e)
@@ -129,11 +142,17 @@ def selecionarArquivo():
         messagebox.showerror(title="Erro de leitura", message="Verifique se o formato do documento está correto e se segue o padrão estabelecido no exemplo (Se atente para virgulas e espaços e para o fato de só poder haver um estado inicial na AFD). Após isso tente novamente!")
 
 def criarExemplo():
-
+    import os
     from tkinter import filedialog
     from tkinter import messagebox
 
     diretorioArquivo = filedialog.askdirectory(title ="Selecione a pasta que quer o exemplo", initialdir=".")
-    exemplo = open(f"{diretorioArquivo}\\exemplo.txt", "w")
-    exemplo.write("alfabeto:a,b\nestados:q0,q1,q2\ninicial:q0\nfinais:q1,q2\ntransicoes\nq0,q1,a\nq0,q0,b\nq1,q0,a\nq1,q2,b\nq2,q1,a\nq2,q2,b")  
-    messagebox.showinfo(title="Exemplo .txt criado com sucesso!", message="O exemplo de .txt contendo uma AFD foi criado na pasta selecionada.")
+
+    if not diretorioArquivo:
+        return
+    
+    diretorioArquivo = os.path.join(diretorioArquivo, "exemplo.txt")
+
+    with open(diretorioArquivo, "w") as exemplo:
+        exemplo.write("alfabeto:a,b\nestados:q0,q1,q2\ninicial:q0\nfinais:q1,q2\ntransicoes\nq0,q1,a\nq0,q0,b\nq1,q0,a\nq1,q2,b\nq2,q1,a\nq2,q2,b")  
+        messagebox.showinfo(title="Exemplo .txt criado com sucesso!", message="O exemplo de .txt contendo uma AFD foi criado na pasta selecionada.")
