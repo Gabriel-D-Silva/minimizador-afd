@@ -64,24 +64,31 @@ def iniciarApp():
 
     janela.mainloop()
 
-def mostrarIteraçãoTabela(Q, matriz):
+def mostrarIteraçãoTabela(Q, matriz, descricao):
     import tkinter as tk
 
     root = tk.Tk()
     root.title("Iteração")
 
     n = len(Q)
-    
-    # Cabeçalho
-    for j, estado in enumerate(Q):
-        tk.Label(root, text=estado, font=("Consolas", 10, "bold")).grid(row=0, column=j+1)
-        tk.Label(root, text=estado, font=("Consolas", 10, "bold")).grid(row=j+1, column=0)
 
-    # Células
+    # Descrição
+    frame_descricao = tk.Frame(root, pady=10)
+    frame_descricao.pack()
+    tk.Label(frame_descricao, text=descricao, font=("Arial", 12, "italic"), fg="blue").pack()
+
+   # Tabela
+    frame_tabela = tk.Frame(root, padx=10, pady=10)
+    frame_tabela.pack()
+
+    for j, estado in enumerate(Q):
+        tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=0, column=j+1)
+        tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=j+1, column=0)
+
     for i in range(n):
         for j in range(n):
             cor = "#c62828" if matriz[i][j] else "#8d8d8d"
             texto = " " if not matriz[i][j] else "✗"
-            tk.Label(root, text=texto, bg=cor, width=4, height=2, relief="ridge").grid(row=i+1, column=j+1)
+            tk.Label(frame_tabela, text=texto, bg=cor, width=4, height=2, relief="ridge").grid(row=i+1, column=j+1)
 
     root.mainloop()

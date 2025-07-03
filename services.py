@@ -111,17 +111,30 @@ def verificarFormatacao(path):
 def aplicarMyhillNerode(afd):
     from gui import mostrarIteraçãoTabela
 
-    estados = (sorted(list(afd.states)))
+    estados = sorted(list(afd.states))
+    estadosFinais = sorted(list(afd.final_states))
     n = len(estados)
     matriz = [[False] * n for _ in range(n)]
 
-    # Passo 1: Desmarcar todos os itens da diagonal principal e acima dela
+    # Passo 1: Marcar todos os itens da diagonal principal e acima dela
     for i in range(len(matriz)):
         for j in range(len(matriz[i])):
             if (i <= j):
                 matriz[i][j] = True
+    mostrarIteraçãoTabela(estados, matriz, "Passo 1: Marcar as diagonais \nprincipais e todos os valores \nacima dela")
 
-    mostrarIteraçãoTabela(estados, matriz)
+    # Passo 2: Marcar todos onde P é um estado final e Q não é um estado final
+    for i in range(len(matriz)):
+        for j in range(len(matriz[i])):
+            # Vê se a iteração não está marcada
+            if(matriz[i][j] == False):
+                if(((estados[i] in estadosFinais) and (estados[j] not in estadosFinais)) or ((estados[j] in estadosFinais) and (estados[i] not in estadosFinais))):
+                    matriz[i][j] = True
+    mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F")
+
+    # Passo 3
+
+    # Passo 4
 
     afdMinimizada = afd
     return afdMinimizada
