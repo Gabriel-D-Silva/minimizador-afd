@@ -67,8 +67,8 @@ def iniciarApp():
 def mostrarIteraçãoTabela(Q, matriz, descricao):
     import tkinter as tk
 
-    root = tk.Tk()
-    root.title("Iteração")
+    root = tk.Toplevel()
+    root.title("Iteração}")
 
     n = len(Q)
 
@@ -90,5 +90,3 @@ def mostrarIteraçãoTabela(Q, matriz, descricao):
             cor = "#c62828" if matriz[i][j] else "#8d8d8d"
             texto = " " if not matriz[i][j] else "✗"
             tk.Label(frame_tabela, text=texto, bg=cor, width=4, height=2, relief="ridge").grid(row=i+1, column=j+1)
-
-    root.mainloop()

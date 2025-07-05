@@ -149,9 +149,12 @@ def selecionarArquivo():
         conteudo = [x.strip('\n') for x in conteudo]
         try:
             afd = criarAFD(conteudo)
+            # afd.show_diagram()
+            # precisa instalar o 'coloraide' e o 'pygraphviz'
             print('AFD criada')
             afdMinimizada = aplicarMyhillNerode(afd)
-            # Abrir uma tela com o afd miniminzado
+            # afdMinimizada.show_diagram()
+            # precisa instalar o 'coloraide' e o 'pygraphviz'
         except Exception as e:
             import traceback
             print("Erro ao criar AFD: ", e)
