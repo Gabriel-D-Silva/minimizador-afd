@@ -142,6 +142,7 @@ def aplicarMyhillNerode(afd):
 def selecionarArquivo():
     from tkinter import filedialog
     from tkinter import messagebox
+    from visual_automata.fa.dfa import VisualDFA
     path = filedialog.askopenfile(title="Abrir arquivo txt", filetypes=[("Arquivo de texto", "*.txt")], initialdir=".")
     if(verificarFormatacao(path.name)):
         with open(path.name) as arquivo:
@@ -149,12 +150,10 @@ def selecionarArquivo():
         conteudo = [x.strip('\n') for x in conteudo]
         try:
             afd = criarAFD(conteudo)
-            # afd.show_diagram()
-            # precisa instalar o 'coloraide' e o 'pygraphviz'
-            print('AFD criada')
+            # Criando a caralha visualmente
+            nova = VisualDFA(afd)
+            nova.show_diagram(view=True)
             afdMinimizada = aplicarMyhillNerode(afd)
-            # afdMinimizada.show_diagram()
-            # precisa instalar o 'coloraide' e o 'pygraphviz'
         except Exception as e:
             import traceback
             print("Erro ao criar AFD: ", e)
