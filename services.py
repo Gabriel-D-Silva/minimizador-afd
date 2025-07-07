@@ -41,7 +41,7 @@ def criarAFD(conteudo):
         transicoes_dict.update(item)
     
     print('transicoes: ',transicoes_dict)
-
+    
     # Definindo a AFD
     afd = DFA(
         states={*estados},
@@ -131,12 +131,92 @@ def aplicarMyhillNerode(afd):
                 if(((estados[i] in estadosFinais) and (estados[j] not in estadosFinais)) or ((estados[j] in estadosFinais) and (estados[i] not in estadosFinais))):
                     matriz[i][j] = True
     mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F")
+    
+    # Passo 3 (Satânico): Vê se tem algum par não marcado (P,Q) e  
+    alterado = True
+    while alterado:
+        alterado = False
+        for i in range(len(matriz)):
+            for j in range(len(matriz[i])):
+                if not matriz[i][j]:  # Se ainda não está marcado
+                    for simbolo in afd.input_symbols:
+                        p = afd.transitions[estados[i]].get(simbolo)
+                        q = afd.transitions[estados[j]].get(simbolo)
 
-    # Passo 3
+                        if p is None or q is None:
+                            continue  # Ignora símbolos que não têm transição
 
-    # Passo 4
+                        # Descobrir as posições na matriz dos estados p e q
+                        p_index = estados.index(p)
+                        q_index = estados.index(q)
 
-    afdMinimizada = afd
+                        if p_index > q_index:
+                            p_index, q_index = q_index, p_index
+
+                        if matriz[p_index][q_index]:  # Se os destinos já são distinguíveis
+                            matriz[i][j] = True
+                            alterado = True
+                            break  # Sai do loop de símbolos, já marcou
+        mostrarIteraçãoTabela(estados, matriz, "Passo 3: Propagar distinções")
+
+    # Passo 4 Combinar todos os pares não marcados e fazer os estados equivalentes
+    classes = []
+    usados = set()
+
+    for i in range(len(estados)):
+        if estados[i] in usados:
+            continue
+
+        nova_classe = {estados[i]}
+        usados.add(estados[i])
+
+        for j in range(i + 1, len(estados)):
+            if not matriz[i][j]:
+                nova_classe.add(estados[j])
+                usados.add(estados[j])
+
+        classes.append(nova_classe)
+
+    mostrarIteraçãoTabela(estados, matriz, "Passo 4: Classes de equivalência formadas:\n" + str(classes))
+    
+    estado_para_classe = {}
+    for idx, classe in enumerate(classes):
+        for estado in classe:
+            estado_para_classe[estado] = f'C{idx}'
+
+    # Criar novo conjunto de estados
+    novos_estados = set(estado_para_classe.values())
+
+    # Definir novo estado inicial
+    novo_estado_inicial = estado_para_classe[afd.initial_state]
+
+    # Definir novos estados finais
+    novos_estados_finais = set()
+    for estado in estadosFinais:
+        novos_estados_finais.add(estado_para_classe[estado])
+
+    # Definir novas transições
+    novas_transicoes = {}
+    for idx, classe in enumerate(classes):
+        representante = list(classe)[0]
+        novas_transicoes[f'C{idx}'] = {}
+        for simbolo in afd.input_symbols:
+            destino = afd.transitions[representante].get(simbolo)
+            if destino:
+                novas_transicoes[f'C{idx}'][simbolo] = estado_para_classe[destino]
+
+    # fazer AFD minimizado gloria a deus!
+    from automata.fa.dfa import DFA
+
+    afdMinimizada = DFA(
+        states=novos_estados,
+        input_symbols=afd.input_symbols,
+        transitions=novas_transicoes,
+        initial_state=novo_estado_inicial,
+        final_states=novos_estados_finais
+    )
+    from visual_automata.fa.dfa import VisualDFA
+    VisualDFA(afdMinimizada)
     return afdMinimizada
 
 def selecionarArquivo():
