@@ -132,12 +132,12 @@ def aplicarMyhillNerode(afd):
                     matriz[i][j] = True
     mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F")
     
-    # Passo 3 (Satânico): Vê se tem algum par não marcado (P,Q) e  
+    # Passo 3: Propagar distinções
     alterado = True
     while alterado:
         alterado = False
         for i in range(len(matriz)):
-            for j in range(len(matriz[i])):
+            for j in range(i + 1, len(matriz[i])):  # Começa de j = i+1 para acessar apenas a metade válida
                 if not matriz[i][j]:  # Se ainda não está marcado
                     for simbolo in afd.input_symbols:
                         p = afd.transitions[estados[i]].get(simbolo)
@@ -150,6 +150,7 @@ def aplicarMyhillNerode(afd):
                         p_index = estados.index(p)
                         q_index = estados.index(q)
 
+                        # Sempre trabalhar com p_index <= q_index para manter a triangularidade
                         if p_index > q_index:
                             p_index, q_index = q_index, p_index
 
@@ -157,7 +158,7 @@ def aplicarMyhillNerode(afd):
                             matriz[i][j] = True
                             alterado = True
                             break  # Sai do loop de símbolos, já marcou
-        mostrarIteraçãoTabela(estados, matriz, "Passo 3: Propagar distinções")
+        mostrarIteraçãoTabela(estados, matriz, "Passo 3: Propagar distinções")
 
     # Passo 4 Combinar todos os pares não marcados e fazer os estados equivalentes
     classes = []
@@ -216,7 +217,7 @@ def aplicarMyhillNerode(afd):
         final_states=novos_estados_finais
     )
     from visual_automata.fa.dfa import VisualDFA
-    VisualDFA(afdMinimizada)
+    VisualDFA(afdMinimizada).show_diagram(view=True)
     return afdMinimizada
 
 def selecionarArquivo():
