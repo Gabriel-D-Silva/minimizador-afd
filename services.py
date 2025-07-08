@@ -108,6 +108,25 @@ def verificarFormatacao(path):
     except Exception as e:
         return False
 
+def agruparEstadosComuns(lista_de_listas):
+    grupos = []
+
+    for sublista in lista_de_listas:
+        sublista_set = set(sublista)
+        grupo_atual = []
+
+        for grupo in grupos:
+            if sublista_set & grupo:  # interseção não vazia
+                sublista_set |= grupo  # união
+            else:
+                grupo_atual.append(grupo)
+
+        grupo_atual.append(sublista_set)
+        grupos = grupo_atual
+
+    # Converter para listas ordenadas
+    return [sorted(list(grupo)) for grupo in grupos]
+
 def aplicarMyhillNerode(afd):
     from gui import mostrarIteraçãoTabela
 
@@ -123,7 +142,7 @@ def aplicarMyhillNerode(afd):
         for j in range(len(matriz[i])):
             if (i <= j):
                 matriz[i][j] = None
-    mostrarIteraçãoTabela(estados, matriz, "Passo 1: Marcar as diagonais \nprincipais e todos os valores \nacima dela")
+    mostrarIteraçãoTabela(estados, matriz, "Passo 1: Desconsiderar as diagonais \nprincipais e todos os valores \nacima dela", 1)
 
     # Passo 2: Marcar todos onde P é um estado final e Q não é um estado final
     for i in range(len(matriz)):
@@ -132,7 +151,7 @@ def aplicarMyhillNerode(afd):
             if(matriz[i][j] == False):
                 if(((estados[i] in estadosFinais) and (estados[j] not in estadosFinais)) or ((estados[j] in estadosFinais) and (estados[i] not in estadosFinais))):
                     matriz[i][j] = True
-    mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F")
+    mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F", 2)
     
     # Passo 3: Propagar distinções
     for i in range(len(matriz)):
@@ -168,9 +187,37 @@ def aplicarMyhillNerode(afd):
                                     matriz[qIndex][pIndex] = True
                                 #print(matriz[estados.index(δQ)][estados.index(δP)])
                             #print('----------------------------------------')
+    mostrarIteraçãoTabela(estados, matriz, "Passo 3: Para pares não marcados [P,Q], \ntal que (δ[P,x],δ[Q,x]) está marcado, \nmarcar [P,Q]", 3)
 
+    # Passo 4: Criar classes simplificadas
+    combinacoes = []
+    for i in range(len(matriz)):
+            for j in range(len(matriz[i])):
+                if (matriz[i][j] == False):
+                    combinacao = []
 
-    mostrarIteraçãoTabela(estados, matriz, "Passo 3: Fodase?")
+                    p = estados[j]
+                    q = estados[i]
+
+                    combinacao.append(p)
+                    combinacao.append(q)
+
+                    combinacoes.append(combinacao)
+
+    agrupamentos = agruparEstadosComuns(combinacoes)
+    for estado in estados:
+        if estado not in (set().union(*agrupamentos)):
+            agrupamentos.append([estado])
+
+    novosEstados = []
+    for agrupamento in agrupamentos:
+        estado = ''
+        for i in agrupamento:
+            estado = estado+i
+        novosEstados.append(estado)
+    mostrarIteraçãoTabela(estados, False, "Passo 4: Criar os estados simplificados: "+str(novosEstados), 4)
+
+    # Finalmente, criar a afd simplificada (Fazer ainda)
 
 def selecionarArquivo():
     from tkinter import filedialog

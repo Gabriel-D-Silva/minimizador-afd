@@ -64,11 +64,11 @@ def iniciarApp():
 
     janela.mainloop()
 
-def mostrarIteraçãoTabela(Q, matriz, descricao):
+def mostrarIteraçãoTabela(Q, matriz, descricao, iteracao):
     import tkinter as tk
 
     root = tk.Toplevel()
-    root.title("Iteração}")
+    root.title("Passo "+str(iteracao))
 
     n = len(Q)
 
@@ -78,23 +78,24 @@ def mostrarIteraçãoTabela(Q, matriz, descricao):
     tk.Label(frame_descricao, text=descricao, font=("Arial", 12, "italic"), fg="blue").pack()
 
    # Tabela
-    frame_tabela = tk.Frame(root, padx=10, pady=10)
-    frame_tabela.pack()
+    if (matriz):
+        frame_tabela = tk.Frame(root, padx=10, pady=10)
+        frame_tabela.pack()
 
-    for j, estado in enumerate(Q):
-        tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=0, column=j+1)
-        tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=j+1, column=0)
+        for j, estado in enumerate(Q):
+            tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=0, column=j+1)
+            tk.Label(frame_tabela, text=estado, font=("Consolas", 10, "bold")).grid(row=j+1, column=0)
 
-    for i in range(n):
-        for j in range(n):
+        for i in range(n):
+            for j in range(n):
 
-            if (matriz[i][j] == False):
-                cor = "#f4f4f4"
-            elif (matriz[i][j] == None):
-                cor = "#000000"
-            else:
-                cor = "#c62828"
+                if (matriz[i][j] == False):
+                    cor = "#f4f4f4"
+                elif (matriz[i][j] == None):
+                    cor = "#000000"
+                else:
+                    cor = "#c62828"
 
-            texto = " " if not matriz[i][j] else "✗"
-            
-            tk.Label(frame_tabela, text=texto, bg=cor, width=4, height=2, relief="ridge").grid(row=i+1, column=j+1)
+                texto = " " if not matriz[i][j] else "✗"
+                
+                tk.Label(frame_tabela, text=texto, bg=cor, width=4, height=2, relief="ridge").grid(row=i+1, column=j+1)
