@@ -129,6 +129,7 @@ def agruparEstadosComuns(lista_de_listas):
 
 def aplicarMyhillNerode(afd):
     from gui import mostrarIteraçãoTabela
+    from automata.fa.dfa import DFA
 
     alfabeto = sorted(afd.input_symbols)
     estados = sorted(list(afd.states))
@@ -164,7 +165,7 @@ def aplicarMyhillNerode(afd):
                         q = estados[i]
                         # Itera sobre os simbolos do alfabeto da afd
                         for simbolo in alfabeto:
-                            print(simbolo, p, q)
+                            #print(simbolo, p, q)
                             pIndex = estados.index(p)
                             qIndex = estados.index(q)
 
@@ -203,12 +204,10 @@ def aplicarMyhillNerode(afd):
                     combinacao.append(q)
 
                     combinacoes.append(combinacao)
-
     agrupamentos = agruparEstadosComuns(combinacoes)
     for estado in estados:
         if estado not in (set().union(*agrupamentos)):
             agrupamentos.append([estado])
-
     novosEstados = []
     for agrupamento in agrupamentos:
         estado = ''
@@ -217,7 +216,67 @@ def aplicarMyhillNerode(afd):
         novosEstados.append(estado)
     mostrarIteraçãoTabela(estados, False, "Passo 4: Criar os estados simplificados: "+str(novosEstados), 4)
 
-    # Finalmente, criar a afd simplificada (Fazer ainda)
+    # Finalmente, criar a afd simplificada
+
+    # Definir estado inicial
+    novoEstadoInicial = []
+    for estado in novosEstados:
+        if (afd.initial_state in estado):
+            novoEstadoInicial.append(estado)
+            break
+
+    # Definir estados finais
+    novosEstadosFinais = []
+    for estadoFinal in estadosFinais:
+        for estado in novosEstados:
+            if (estadoFinal in estado):
+                novosEstadosFinais.append(estado)
+    novosEstadosFinais = list(set(novosEstadosFinais))
+
+    # Definir transições
+
+    # Mapeia cada estado original para seu grupo minimizado
+    mapeamento = {}
+    for grupo in novosEstados:
+        for estado in grupo:
+            mapeamento[estado] = grupo
+
+    novasTransicoes = {grupo: {} for grupo in novosEstados}
+
+    # Para cada novo estado (grupo), analisar as transições de seus membros
+    try:
+        for grupo in novosEstados:
+            membros = list(grupo)
+            for simbolo in alfabeto:
+                destinos = set()
+                for estado in membros:
+                    if simbolo in transicoes[estado]:
+                        destino = transicoes[estado][simbolo]
+                        grupo_destino = mapeamento[destino]
+                        destinos.add(grupo_destino)
+                
+                # Só deve haver um destino determinístico por símbolo
+                if len(destinos) == 1:
+                    destino_unico = destinos.pop()
+                    novasTransicoes[grupo][simbolo] = destino_unico
+                elif len(destinos) > 1:
+                    print(f"Atenção: múltiplos destinos encontrados em {grupo} com '{simbolo}' → {destinos}")
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror(title="Erro ao criar novas transições", message=f"Diagnostico:\n{str(e)}")
+
+    try:
+        afdSimplificada = DFA(
+            states={*novosEstados},
+            input_symbols={*alfabeto},
+            transitions=novasTransicoes,
+            initial_state=novoEstadoInicial[0],
+            final_states={*novosEstadosFinais}
+        )
+        return afdSimplificada
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror(title="Erro ao gerar AFD simplificada!", message=f"Diagnostico:\n{str(e)}")
 
 def selecionarArquivo():
     from tkinter import filedialog
@@ -230,11 +289,10 @@ def selecionarArquivo():
         conteudo = [x.strip('\n') for x in conteudo]
         try:
             afd = criarAFD(conteudo)
-            #print(afd.transitions)
             # Criando a caralha visualmente
-            #nova = VisualDFA(afd)
-            #nova.show_diagram(view=True)
             afdMinimizada = aplicarMyhillNerode(afd)
+            imagem = VisualDFA(afdMinimizada)
+            imagem.show_diagram(view=True)
         except Exception as e:
             import traceback
             print("Erro ao criar AFD: ", e)
