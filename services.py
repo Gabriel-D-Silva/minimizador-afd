@@ -111,8 +111,10 @@ def verificarFormatacao(path):
 def aplicarMyhillNerode(afd):
     from gui import mostrarIteraçãoTabela
 
+    alfabeto = sorted(afd.input_symbols)
     estados = sorted(list(afd.states))
     estadosFinais = sorted(list(afd.final_states))
+    transicoes = afd.transitions
     n = len(estados)
     matriz = [[False] * n for _ in range(n)]
 
@@ -120,7 +122,7 @@ def aplicarMyhillNerode(afd):
     for i in range(len(matriz)):
         for j in range(len(matriz[i])):
             if (i <= j):
-                matriz[i][j] = True
+                matriz[i][j] = None
     mostrarIteraçãoTabela(estados, matriz, "Passo 1: Marcar as diagonais \nprincipais e todos os valores \nacima dela")
 
     # Passo 2: Marcar todos onde P é um estado final e Q não é um estado final
@@ -133,92 +135,42 @@ def aplicarMyhillNerode(afd):
     mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F")
     
     # Passo 3: Propagar distinções
-    alterado = True
-    while alterado:
-        alterado = False
-        for i in range(len(matriz)):
-            for j in range(i + 1, len(matriz[i])):  # Começa de j = i+1 para acessar apenas a metade válida
-                if not matriz[i][j]:  # Se ainda não está marcado
-                    for simbolo in afd.input_symbols:
-                        p = afd.transitions[estados[i]].get(simbolo)
-                        q = afd.transitions[estados[j]].get(simbolo)
+    for i in range(len(matriz)):
+            for j in range(len(matriz[i])):
+                # Vê se a iteração está na parte valida da matriz triangular
+                if not (i <= j):
+                    # Vê se a iteração atual não está marcada
+                    if (matriz[i][j] == False):
+                        p = estados[j]
+                        q = estados[i]
+                        # Itera sobre os simbolos do alfabeto da afd
+                        for simbolo in alfabeto:
+                            print(simbolo, p, q)
+                            pIndex = estados.index(p)
+                            qIndex = estados.index(q)
 
-                        if p is None or q is None:
-                            continue  # Ignora símbolos que não têm transição
+                            #print(alfabeto)
+                            #print(estados)
+                            #print(transicoes)
+                            #print(afd.transitions)
 
-                        # Descobrir as posições na matriz dos estados p e q
-                        p_index = estados.index(p)
-                        q_index = estados.index(q)
+                            δP = transicoes.get(p).get(simbolo)
+                            δQ = transicoes.get(q).get(simbolo)
 
-                        # Sempre trabalhar com p_index <= q_index para manter a triangularidade
-                        if p_index > q_index:
-                            p_index, q_index = q_index, p_index
+                            #print(pIndex,'x',qIndex)
+                            #print("new pair:", δP, δQ)
+                            if (δP > δQ):
+                                if (matriz[estados.index(δP)][estados.index(δQ)] == True):
+                                    matriz[pIndex][qIndex] = True
+                                #print(matriz[estados.index(δP)][estados.index(δQ)])
+                            else:
+                                if (matriz[estados.index(δQ)][estados.index(δP)] == True):
+                                    matriz[qIndex][pIndex] = True
+                                #print(matriz[estados.index(δQ)][estados.index(δP)])
+                            #print('----------------------------------------')
 
-                        if matriz[p_index][q_index]:  # Se os destinos já são distinguíveis
-                            matriz[i][j] = True
-                            alterado = True
-                            break  # Sai do loop de símbolos, já marcou
-        mostrarIteraçãoTabela(estados, matriz, "Passo 3: Propagar distinções")
 
-    # Passo 4 Combinar todos os pares não marcados e fazer os estados equivalentes
-    classes = []
-    usados = set()
-
-    for i in range(len(estados)):
-        if estados[i] in usados:
-            continue
-
-        nova_classe = {estados[i]}
-        usados.add(estados[i])
-
-        for j in range(i + 1, len(estados)):
-            if not matriz[i][j]:
-                nova_classe.add(estados[j])
-                usados.add(estados[j])
-
-        classes.append(nova_classe)
-
-    mostrarIteraçãoTabela(estados, matriz, "Passo 4: Classes de equivalência formadas:\n" + str(classes))
-    
-    estado_para_classe = {}
-    for idx, classe in enumerate(classes):
-        for estado in classe:
-            estado_para_classe[estado] = f'C{idx}'
-
-    # Criar novo conjunto de estados
-    novos_estados = set(estado_para_classe.values())
-
-    # Definir novo estado inicial
-    novo_estado_inicial = estado_para_classe[afd.initial_state]
-
-    # Definir novos estados finais
-    novos_estados_finais = set()
-    for estado in estadosFinais:
-        novos_estados_finais.add(estado_para_classe[estado])
-
-    # Definir novas transições
-    novas_transicoes = {}
-    for idx, classe in enumerate(classes):
-        representante = list(classe)[0]
-        novas_transicoes[f'C{idx}'] = {}
-        for simbolo in afd.input_symbols:
-            destino = afd.transitions[representante].get(simbolo)
-            if destino:
-                novas_transicoes[f'C{idx}'][simbolo] = estado_para_classe[destino]
-
-    # fazer AFD minimizado gloria a deus!
-    from automata.fa.dfa import DFA
-
-    afdMinimizada = DFA(
-        states=novos_estados,
-        input_symbols=afd.input_symbols,
-        transitions=novas_transicoes,
-        initial_state=novo_estado_inicial,
-        final_states=novos_estados_finais
-    )
-    from visual_automata.fa.dfa import VisualDFA
-    VisualDFA(afdMinimizada).show_diagram(view=True)
-    return afdMinimizada
+    mostrarIteraçãoTabela(estados, matriz, "Passo 3: Fodase?")
 
 def selecionarArquivo():
     from tkinter import filedialog
@@ -231,9 +183,10 @@ def selecionarArquivo():
         conteudo = [x.strip('\n') for x in conteudo]
         try:
             afd = criarAFD(conteudo)
+            #print(afd.transitions)
             # Criando a caralha visualmente
-            nova = VisualDFA(afd)
-            nova.show_diagram(view=True)
+            #nova = VisualDFA(afd)
+            #nova.show_diagram(view=True)
             afdMinimizada = aplicarMyhillNerode(afd)
         except Exception as e:
             import traceback
