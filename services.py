@@ -108,25 +108,6 @@ def verificarFormatacao(path):
     except Exception as e:
         return False
 
-def agruparEstadosComuns(lista_de_listas):
-    grupos = []
-
-    for sublista in lista_de_listas:
-        sublista_set = set(sublista)
-        grupo_atual = []
-
-        for grupo in grupos:
-            if sublista_set & grupo:  # interseção não vazia
-                sublista_set |= grupo  # união
-            else:
-                grupo_atual.append(grupo)
-
-        grupo_atual.append(sublista_set)
-        grupos = grupo_atual
-
-    # Converter para listas ordenadas
-    return [sorted(list(grupo)) for grupo in grupos]
-
 def aplicarMyhillNerode(afd):
     from gui import mostrarIteraçãoTabela
     from automata.fa.dfa import DFA
@@ -155,42 +136,40 @@ def aplicarMyhillNerode(afd):
     mostrarIteraçãoTabela(estados, matriz, "Passo 2: Marcar os pares onde P∈F e Q∉F", 2)
     
     # Passo 3: Propagar distinções
-    for i in range(len(matriz)):
-            for j in range(len(matriz[i])):
-                # Vê se a iteração está na parte valida da matriz triangular
-                if not (i <= j):
-                    # Vê se a iteração atual não está marcada
-                    if (matriz[i][j] == False):
-                        p = estados[j]
-                        q = estados[i]
-                        # Itera sobre os simbolos do alfabeto da afd
-                        for simbolo in alfabeto:
-                            #print(simbolo, p, q)
-                            pIndex = estados.index(p)
-                            qIndex = estados.index(q)
+    alterado = True
+    while alterado:
+        alterado = False  # Começa assumindo que nada será marcado
+        for i in range(len(matriz)):
+                for j in range(len(matriz[i])):
+                    # Vê se a iteração está na parte valida da matriz triangular
+                    if not (i <= j):
+                        # Vê se a iteração atual não está marcada
+                        if (matriz[i][j] == False):
+                            p = estados[j]
+                            q = estados[i]
+                            # Itera sobre os simbolos do alfabeto da afd
+                            for simbolo in alfabeto:
+                                pIndex = estados.index(p)
+                                qIndex = estados.index(q)
 
-                            #print(alfabeto)
-                            #print(estados)
-                            #print(transicoes)
-                            #print(afd.transitions)
+                                δP = transicoes.get(p).get(simbolo)
+                                δQ = transicoes.get(q).get(simbolo)
 
-                            δP = transicoes.get(p).get(simbolo)
-                            δQ = transicoes.get(q).get(simbolo)
-
-                            #print(pIndex,'x',qIndex)
-                            #print("new pair:", δP, δQ)
-                            if (δP > δQ):
-                                if (matriz[estados.index(δP)][estados.index(δQ)] == True):
-                                    matriz[pIndex][qIndex] = True
-                                #print(matriz[estados.index(δP)][estados.index(δQ)])
-                            else:
-                                if (matriz[estados.index(δQ)][estados.index(δP)] == True):
-                                    matriz[qIndex][pIndex] = True
-                                #print(matriz[estados.index(δQ)][estados.index(δP)])
-                            #print('----------------------------------------')
+                                if (δP > δQ):
+                                    if (matriz[estados.index(δP)][estados.index(δQ)] == True):
+                                        matriz[pIndex][qIndex] = True
+                                        alterado = True  # Houve alteração, então repete o while
+                                        break  # Não precisa testar mais símbolos para esse par
+                                else:
+                                    if (matriz[estados.index(δQ)][estados.index(δP)] == True):
+                                        matriz[qIndex][pIndex] = True
+                                        alterado = True  # Houve alteração, então repete o while
+                                        break  # Não precisa testar mais símbolos para esse par
     mostrarIteraçãoTabela(estados, matriz, "Passo 3: Para pares não marcados [P,Q], \ntal que (δ[P,x],δ[Q,x]) está marcado, \nmarcar [P,Q]", 3)
 
-    # Passo 4: Criar classes simplificadas
+    # Passo 4: Criar estados simplificadas
+    from util import agruparEstadosComuns
+
     combinacoes = []
     for i in range(len(matriz)):
             for j in range(len(matriz[i])):
@@ -210,11 +189,14 @@ def aplicarMyhillNerode(afd):
             agrupamentos.append([estado])
     novosEstados = []
     for agrupamento in agrupamentos:
-        estado = ''
-        for i in agrupamento:
-            estado = estado+i
-        novosEstados.append(estado)
+        agrupamento_ordenado = sorted(agrupamento)
+        nome_estado = '_'.join(agrupamento_ordenado)
+        novosEstados.append(nome_estado)
     mostrarIteraçãoTabela(estados, False, "Passo 4: Criar os estados simplificados: "+str(novosEstados), 4)
+
+    print('estados antigos: ',estados)
+    print('transicoes antigas:',transicoes)
+    print('novosEstados:',novosEstados)
 
     # Finalmente, criar a afd simplificada
 
@@ -234,11 +216,13 @@ def aplicarMyhillNerode(afd):
     novosEstadosFinais = list(set(novosEstadosFinais))
 
     # Definir transições
+    from util import extrair_membros
 
     # Mapeia cada estado original para seu grupo minimizado
     mapeamento = {}
     for grupo in novosEstados:
-        for estado in grupo:
+        membros = extrair_membros(grupo, estados)
+        for estado in membros:
             mapeamento[estado] = grupo
 
     novasTransicoes = {grupo: {} for grupo in novosEstados}
@@ -246,7 +230,7 @@ def aplicarMyhillNerode(afd):
     # Para cada novo estado (grupo), analisar as transições de seus membros
     try:
         for grupo in novosEstados:
-            membros = list(grupo)
+            membros = extrair_membros(grupo, estados)
             for simbolo in alfabeto:
                 destinos = set()
                 for estado in membros:
@@ -254,16 +238,28 @@ def aplicarMyhillNerode(afd):
                         destino = transicoes[estado][simbolo]
                         grupo_destino = mapeamento[destino]
                         destinos.add(grupo_destino)
-                
-                # Só deve haver um destino determinístico por símbolo
+
                 if len(destinos) == 1:
                     destino_unico = destinos.pop()
                     novasTransicoes[grupo][simbolo] = destino_unico
                 elif len(destinos) > 1:
-                    print(f"Atenção: múltiplos destinos encontrados em {grupo} com '{simbolo}' → {destinos}")
+                        from tkinter import messagebox
+                        messagebox.showerror(
+                            title="Erro: AFD inválido",
+                            message=(
+                                f"Erro ao tentar simplificar o AFD.\n\n"
+                                f"O grupo {grupo} tem múltiplos destinos para o símbolo '{simbolo}':\n{destinos}\n\n"
+                                "Isso indica que a simplificação produziu um AFN (não-determinístico), o que não é permitido.\n\n"
+                                "Verifique a implementação da tabela de minimização."
+                            )
+                        )
+                        raise ValueError("Minimização inválida — resultou em não-determinismo.")
     except Exception as e:
         from tkinter import messagebox
         messagebox.showerror(title="Erro ao criar novas transições", message=f"Diagnostico:\n{str(e)}")
+    except ValueError as e:
+        pass
+    print(novasTransicoes)
 
     try:
         afdSimplificada = DFA(

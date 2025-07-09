@@ -21,7 +21,7 @@ def iniciarApp():
 
     try:
         imgExemplo = Image.open("exemplo.png")
-        imgExemploRedimensionada = imgExemplo.resize((600, 400))
+        imgExemploRedimensionada = imgExemplo.resize((600, 300))
         imagemTk = ImageTk.PhotoImage(imgExemploRedimensionada)
 
         labelImagem = tk.Label(frameTutorial, image=imagemTk)
