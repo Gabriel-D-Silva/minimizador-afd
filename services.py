@@ -310,5 +310,5 @@ def criarExemplo():
     diretorioArquivo = os.path.join(diretorioArquivo, "exemplo.txt")
 
     with open(diretorioArquivo, "w") as exemplo:
-        exemplo.write("alfabeto:a,b\nestados:q0,q1,q2\ninicial:q0\nfinais:q1,q2\ntransicoes\nq0,q1,a\nq0,q0,b\nq1,q0,a\nq1,q2,b\nq2,q1,a\nq2,q2,b")  
+        exemplo.write("alfabeto:0,1\nestados:a,b,c,d,e,f\ninicial:a\nfinais:c,d,e\ntransicoes\na,c,1\na,b,0\nb,d,1\nb,a,0\nc,e,0\nc,f,1\nd,f,1\nd,e,0\ne,e,0\ne,f,1\nf,f,1\nf,f,0")  
         messagebox.showinfo(title="Exemplo .txt criado com sucesso!", message="O exemplo de .txt contendo uma AFD foi criado na pasta selecionada.")
